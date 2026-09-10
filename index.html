@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quadro Tático Interativo</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Painel Esquerdo: Ferramentas e Gravação -->
+        <div id="left-panel" class="panel">
+            <h3>Ferramentas</h3>
+            <button id="btn-pen" class="tool-btn active" title="Caneta"><i class="fas fa-pen"></i> Caneta</button>
+            <button id="btn-eraser" class="tool-btn" title="Borracha"><i class="fas fa-eraser"></i> Borracha</button>
+            <button id="btn-undo" class="action-btn" title="Desfazer traço"><i class="fas fa-undo"></i> Desfazer</button>
+            <button id="btn-clear-drawings" class="action-btn" title="Limpar desenhos"><i class="fas fa-trash"></i> Limpar Rabiscos</button>
+            
+            <hr>
+            
+            <h3>Gravação</h3>
+            <button id="btn-record" class="action-btn record-btn"><i class="fas fa-circle"></i> Gravar Jogada</button>
+            <button id="btn-play" class="action-btn play-btn" disabled><i class="fas fa-play"></i> Reproduzir</button>
+            <button id="btn-clear-record" class="action-btn" disabled><i class="fas fa-stop"></i> Limpar Gravação</button>
+
+            <hr>
+
+            <h3>Armazenamento</h3>
+            <button id="btn-save" class="action-btn"><i class="fas fa-save"></i> Salvar Estado</button>
+            <button id="btn-load" class="action-btn"><i class="fas fa-folder-open"></i> Carregar Estado</button>
+        </div>
+
+        <!-- Área Central: Campo (Canvas) -->
+        <div id="canvas-container">
+            <canvas id="tactical-board"></canvas>
+            <button id="btn-orientation" class="floating-btn"><i class="fas fa-sync-alt"></i> Alternar Rotação</button>
+        </div>
+
+        <!-- Painel Direito: Elenco e Ações -->
+        <div id="right-panel" class="panel">
+            <h3>Peças</h3>
+            <button id="btn-add-a" class="add-btn team-a"><i class="fas fa-user"></i> Add Time A (Azul)</button>
+            <button id="btn-add-b" class="add-btn team-b"><i class="fas fa-user"></i> Add Time B (Vermelho)</button>
+            <button id="btn-add-ball" class="add-btn ball-btn"><i class="fas fa-futbol"></i> Add Bola</button>
+            
+            <hr>
+
+            <h3>Táticas (Presets)</h3>
+            <button id="btn-preset-11" class="action-btn"><i class="fas fa-users"></i> Formação 11x11</button>
+            <button id="btn-preset-3" class="action-btn"><i class="fas fa-running"></i> Contra-Ataque 3x3</button>
+            <button id="btn-clear-board" class="action-btn danger"><i class="fas fa-broom"></i> Limpar Campo</button>
+
+            <hr>
+
+            <h3>Ações de Jogo</h3>
+            <button id="btn-pass" class="action-btn special-action"><i class="fas fa-exchange-alt"></i> Fazer Passe</button>
+            <p class="hint" id="hint-pass" style="display:none;">Clique no emissor, depois no receptor.</p>
+            
+            <button id="btn-shoot" class="action-btn special-action"><i class="fas fa-bullseye"></i> Chutar ao Gol</button>
+            <p class="hint" id="hint-shoot" style="display:none;">Clique no jogador que vai chutar.</p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
