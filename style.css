@@ -1,0 +1,137 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body, html {
+    width: 100%;
+    height: 100%;
+    background-color: #1e1e1e;
+    color: #fff;
+    overflow: hidden;
+}
+
+#app {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.panel {
+    width: 260px;
+    background-color: #2d2d2d;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 10;
+    overflow-y: auto;
+}
+
+h3 {
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #aaa;
+    margin-bottom: 5px;
+    margin-top: 10px;
+}
+
+hr {
+    border: 0;
+    height: 1px;
+    background: #444;
+    margin: 10px 0;
+}
+
+button {
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tool-btn { background-color: #444; color: white; }
+.tool-btn.active { background-color: #4CAF50; }
+.tool-btn:hover:not(.active) { background-color: #555; }
+
+.action-btn { background-color: #555; color: white; }
+.action-btn:hover { background-color: #666; }
+.action-btn.danger { background-color: #d32f2f; }
+.action-btn.danger:hover { background-color: #b71c1c; }
+
+.add-btn { color: white; }
+.team-a { background-color: #1976D2; }
+.team-a:hover { background-color: #1565C0; }
+.team-b { background-color: #C62828; }
+.team-b:hover { background-color: #b71c1c; }
+.ball-btn { background-color: #F57F17; }
+.ball-btn:hover { background-color: #F9A825; }
+
+.record-btn { background-color: #c62828; }
+.record-btn.recording { animation: pulse 1.5s infinite; background-color: #ff5252; }
+.play-btn { background-color: #2E7D32; }
+
+.special-action { background-color: #9C27B0; }
+.special-action.active { background-color: #E1BEE7; color: #4A148C; }
+
+.hint {
+    font-size: 11px;
+    color: #E1BEE7;
+    margin-top: -5px;
+    margin-bottom: 5px;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+#canvas-container {
+    flex-grow: 1;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #121212;
+    overflow: hidden;
+}
+
+canvas {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    cursor: grab;
+}
+
+canvas:active {
+    cursor: grabbing;
+}
+
+canvas.drawing {
+    cursor: crosshair;
+}
+
+.floating-btn {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.floating-btn:hover {
+    background-color: white;
+}
