@@ -2,11 +2,13 @@ const canvas = document.getElementById('tactical-board');
 const ctx = canvas.getContext('2d');
 const container = document.getElementById('canvas-container');
 
-// Estado global e Variáveis ajustadas
+// Estado global
 let state = {
     isVertical: false,
     players: [],
     ball: null,
+    ballOwner: null, // Novo: rastreia quem está com a bola
+    isBallAnimating: false,
     lines: [],
     currentLine: null,
     mode: 'drag',
@@ -15,129 +17,144 @@ let state = {
     recording: false,
     playing: false,
     recordedFrames: [],
-    frameIndex: 0,
-    actionData: {}
+    frameIndex: 0
 };
 
 let savedPlays = JSON.parse(localStorage.getItem('taticoWebPlays')) || [];
 
-const FIELD_COLOR = '#4CAF50';
-const LINE_COLOR = 'rgba(255, 255, 255, 0.8)';
-const PLAYER_RADIUS = 7.5; // Reduzido pela metade
-const BALL_RADIUS = 4;     // Reduzido pela metade
+// TAMANHOS AUMENTADOS EM 50%
+const PLAYER_RADIUS = 12; 
+const BALL_RADIUS = 6;     
 
-// Redimensionar e ajustar canvas
 function resizeCanvas() {
     const margin = 40;
     const cw = container.clientWidth - margin * 2;
     const ch = container.clientHeight - margin * 2;
     const ratio = state.isVertical ? 68/105 : 105/68;
     
-    let w = cw;
-    let h = cw / ratio;
-    
+    let w = cw; let h = cw / ratio;
     if (h > ch) { h = ch; w = h * ratio; }
     
     canvas.width = w; canvas.height = h;
     ensureGoalkeepers();
+    updateBallPos();
     render();
 }
 window.addEventListener('resize', resizeCanvas);
 
-// --- Goleiros Fixos ---
 function ensureGoalkeepers() {
-    // Remove goleiros atuais para reposicionar
     state.players = state.players.filter(p => !p.isGK);
     const w = canvas.width, h = canvas.height;
-    
     if (!state.isVertical) {
-        state.players.push({ id: 'gk_A', team: 'A', isGK: true, x: 10, y: h/2 });
-        state.players.push({ id: 'gk_B', team: 'B', isGK: true, x: w - 10, y: h/2 });
+        state.players.push({ id: 'gk_A', team: 'A', isGK: true, x: 15, y: h/2 });
+        state.players.push({ id: 'gk_B', team: 'B', isGK: true, x: w - 15, y: h/2 });
     } else {
-        state.players.push({ id: 'gk_A', team: 'A', isGK: true, x: w/2, y: 10 });
-        state.players.push({ id: 'gk_B', team: 'B', isGK: true, x: w/2, y: h - 10 });
+        state.players.push({ id: 'gk_A', team: 'A', isGK: true, x: w/2, y: 15 });
+        state.players.push({ id: 'gk_B', team: 'B', isGK: true, x: w/2, y: h - 15 });
     }
 }
 
-// --- DESENHO DO CAMPO (Correção da linha) ---
+// --- DESIGN DO CAMPO MODERNO ---
 function drawField() {
     const w = canvas.width, h = canvas.height;
-    ctx.fillStyle = FIELD_COLOR; ctx.fillRect(0, 0, w, h);
-    ctx.strokeStyle = LINE_COLOR; ctx.lineWidth = 2;
     
-    // Bordas
-    ctx.strokeRect(10, 10, w - 20, h - 20);
+    // Gramado base
+    ctx.fillStyle = '#2E7D32'; 
+    ctx.fillRect(0, 0, w, h);
+    
+    // Faixas de grama
+    ctx.fillStyle = '#388E3C';
+    const stripeCount = 12;
+    if (!state.isVertical) {
+        const stripeW = w / stripeCount;
+        for(let i=0; i<stripeCount; i+=2) ctx.fillRect(i * stripeW, 0, stripeW, h);
+    } else {
+        const stripeH = h / stripeCount;
+        for(let i=0; i<stripeCount; i+=2) ctx.fillRect(0, i * stripeH, w, stripeH);
+    }
+    
+    // Linhas do campo
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)'; 
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(10, 10, w - 20, h - 20); // Borda
     
     if (!state.isVertical) {
-        // Linha do meio separada do círculo para não criar o "risco"
-        ctx.beginPath();
-        ctx.moveTo(w/2, 10); ctx.lineTo(w/2, h-10);
-        ctx.stroke();
+        // Meio campo
+        ctx.beginPath(); ctx.moveTo(w/2, 10); ctx.lineTo(w/2, h-10); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w/2, h/2, h/6, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w/2, h/2, 3, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
         
-        ctx.beginPath();
-        ctx.arc(w/2, h/2, h/6, 0, Math.PI * 2);
-        ctx.stroke();
-        
+        // Áreas
         ctx.strokeRect(10, h/2 - h/4, w/6, h/2);
         ctx.strokeRect(10, h/2 - h/8, w/12, h/4);
         ctx.strokeRect(w - 10 - w/6, h/2 - h/4, w/6, h/2);
         ctx.strokeRect(w - 10 - w/12, h/2 - h/8, w/12, h/4);
+        
+        // Meia-lua
+        ctx.beginPath(); ctx.arc(10 + w/6, h/2, h/10, -Math.PI/4, Math.PI/4); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w - 10 - w/6, h/2, h/10, Math.PI - Math.PI/4, Math.PI + Math.PI/4); ctx.stroke();
+        
+        // Gols
         ctx.strokeRect(0, h/2 - h/12, 10, h/6);
         ctx.strokeRect(w-10, h/2 - h/12, 10, h/6);
     } else {
-        ctx.beginPath();
-        ctx.moveTo(10, h/2); ctx.lineTo(w-10, h/2);
-        ctx.stroke();
+        // Meio campo
+        ctx.beginPath(); ctx.moveTo(10, h/2); ctx.lineTo(w-10, h/2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w/2, h/2, w/6, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w/2, h/2, 3, 0, Math.PI*2); ctx.fillStyle = '#fff'; ctx.fill();
         
-        ctx.beginPath();
-        ctx.arc(w/2, h/2, w/6, 0, Math.PI * 2);
-        ctx.stroke();
-        
+        // Áreas
         ctx.strokeRect(w/2 - w/4, 10, w/2, h/6);
         ctx.strokeRect(w/2 - w/8, 10, w/4, h/12);
         ctx.strokeRect(w/2 - w/4, h - 10 - h/6, w/2, h/6);
         ctx.strokeRect(w/2 - w/8, h - 10 - h/12, w/4, h/12);
+        
+        // Meia-lua
+        ctx.beginPath(); ctx.arc(w/2, 10 + h/6, w/10, Math.PI/4, Math.PI - Math.PI/4); ctx.stroke();
+        ctx.beginPath(); ctx.arc(w/2, h - 10 - h/6, w/10, Math.PI + Math.PI/4, Math.PI*2 - Math.PI/4); ctx.stroke();
+        
+        // Gols
         ctx.strokeRect(w/2 - w/12, 0, w/6, 10);
         ctx.strokeRect(w/2 - w/12, h-10, w/6, 10);
     }
 }
 
 function drawPlayersAndBall() {
+    // Efeito 3D (Sombra)
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 5;
+    ctx.shadowOffsetY = 3;
+
     state.players.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, PLAYER_RADIUS, 0, Math.PI * 2);
-        // Goleiros ganham um tom levemente diferente para distinguir, ou mantém a cor.
         ctx.fillStyle = p.team === 'A' ? (p.isGK ? '#0D47A1' : '#1976D2') : (p.isGK ? '#880E4F' : '#C62828');
         ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.stroke();
     });
     
-    // Bola Realista (Branca com detalhes escuros)
+    // Bola colada no jogador
     if (state.ball) {
         ctx.beginPath();
         ctx.arc(state.ball.x, state.ball.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fillStyle = '#fff'; ctx.fill();
         ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
         
-        // Detalhe central (Gomo preto)
+        // Detalhe da bola
         ctx.fillStyle = '#000';
-        ctx.beginPath();
-        ctx.arc(state.ball.x, state.ball.y, BALL_RADIUS * 0.4, 0, Math.PI * 2);
-        ctx.fill();
-        // Detalhes radiais
+        ctx.beginPath(); ctx.arc(state.ball.x, state.ball.y, BALL_RADIUS * 0.4, 0, Math.PI * 2); ctx.fill();
         for(let i=0; i<5; i++){
             let angle = (i * Math.PI * 2) / 5;
             let dotX = state.ball.x + Math.cos(angle) * BALL_RADIUS * 0.7;
             let dotY = state.ball.y + Math.sin(angle) * BALL_RADIUS * 0.7;
-            ctx.beginPath(); ctx.arc(dotX, dotY, 0.6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(dotX, dotY, 0.8, 0, Math.PI*2); ctx.fill();
         }
     }
+    ctx.shadowColor = 'transparent'; // Reset sombra para não borrar linhas
 }
 
 function drawLines() {
-    ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     const allLines = [...state.lines];
     if (state.currentLine) allLines.push(state.currentLine);
     
@@ -156,6 +173,21 @@ function render() {
     drawField(); drawLines(); drawPlayersAndBall();
 }
 
+// --- FÍSICA DA POSSE DE BOLA ---
+function updateBallPos() {
+    if (state.ballOwner && state.ball && !state.isBallAnimating) {
+        const p = state.ballOwner;
+        const offset = PLAYER_RADIUS + BALL_RADIUS + 2; // Bola colada à frente
+        if (!state.isVertical) {
+            state.ball.x = p.team === 'A' ? p.x + offset : p.x - offset;
+            state.ball.y = p.y;
+        } else {
+            state.ball.x = p.x;
+            state.ball.y = p.team === 'A' ? p.y + offset : p.y - offset;
+        }
+    }
+}
+
 // --- INTERAÇÕES MOUSE ---
 function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -163,10 +195,7 @@ function getMousePos(e) {
 }
 
 function getHoveredItem(pos) {
-    if (state.ball) {
-        const dist = Math.hypot(pos.x - state.ball.x, pos.y - state.ball.y);
-        if (dist <= BALL_RADIUS + 8) return { type: 'ball', item: state.ball };
-    }
+    // Bola não é mais clicável isoladamente
     for (let i = state.players.length - 1; i >= 0; i--) {
         const p = state.players[i];
         const dist = Math.hypot(pos.x - p.x, pos.y - p.y);
@@ -175,27 +204,13 @@ function getHoveredItem(pos) {
     return null;
 }
 
-// Encontra quem tem a bola para o passe
-function getBallHolder() {
-    if (!state.ball) return null;
-    let closest = null; let minDist = Infinity;
-    state.players.forEach(p => {
-        const dist = Math.hypot(p.x - state.ball.x, p.y - state.ball.y);
-        if (dist < PLAYER_RADIUS + BALL_RADIUS + 8 && dist < minDist) {
-            closest = p; minDist = dist;
-        }
-    });
-    return closest;
-}
-
 canvas.addEventListener('mousedown', (e) => {
     if (state.playing) return;
     const pos = getMousePos(e);
     
     if (state.mode === 'drag') {
         const hovered = getHoveredItem(pos);
-        // Não permite arrastar goleiros fixos
-        if (hovered && (!hovered.item.isGK || hovered.type === 'ball')) {
+        if (hovered && !hovered.item.isGK) {
             state.isDragging = true;
             state.draggedItem = hovered.item;
         }
@@ -208,29 +223,17 @@ canvas.addEventListener('mousedown', (e) => {
         const hovered = getHoveredItem(pos);
         if (hovered && hovered.type === 'player') {
             const receiver = hovered.item;
-            const holder = state.actionData.holder;
-            if (receiver === holder) alert("O jogador já está com a bola.");
-            else if (receiver.team !== holder.team) alert("Você só pode passar para alguém da MESMA equipe!");
-            else { animateBall(receiver.x, receiver.y); resetSpecialMode(); }
-        }
-    } else if (state.mode === 'shoot') {
-        const hovered = getHoveredItem(pos);
-        if (hovered && hovered.type === 'player') {
-            const shooter = hovered.item;
-            if(!state.ball) state.ball = {x: 0, y:0};
-            state.ball.x = shooter.x; state.ball.y = shooter.y; // Gruda a bola no pé antes do chute
-            
-            let goalX, goalY;
-            // Chuta sempre no gol oposto
-            if (!state.isVertical) {
-                if (shooter.team === 'A') { goalX = canvas.width; goalY = canvas.height/2; }
-                else { goalX = 0; goalY = canvas.height/2; }
-            } else {
-                if (shooter.team === 'A') { goalX = canvas.width/2; goalY = canvas.height; }
-                else { goalX = canvas.width/2; goalY = 0; }
+            if (receiver === state.ballOwner) alert("Ele já está com a bola!");
+            else if (receiver.team !== state.ballOwner.team) alert("O passe deve ser para o mesmo time.");
+            else { 
+                const offset = PLAYER_RADIUS + BALL_RADIUS + 2;
+                let targetX = receiver.x, targetY = receiver.y;
+                if (!state.isVertical) targetX = receiver.team === 'A' ? receiver.x + offset : receiver.x - offset;
+                else targetY = receiver.team === 'A' ? receiver.y + offset : receiver.y - offset;
+                
+                animateBall(targetX, targetY, receiver); 
+                resetSpecialMode(); 
             }
-            animateBall(goalX, goalY);
-            resetSpecialMode();
         }
     }
 });
@@ -240,6 +243,14 @@ canvas.addEventListener('mousemove', (e) => {
     const pos = getMousePos(e);
     if (state.isDragging && state.draggedItem) {
         state.draggedItem.x = pos.x; state.draggedItem.y = pos.y;
+        
+        // Lógica de "Pegar a bola" ao se aproximar
+        if (!state.ballOwner && state.ball && !state.isBallAnimating) {
+            const dist = Math.hypot(state.draggedItem.x - state.ball.x, state.draggedItem.y - state.ball.y);
+            if (dist < PLAYER_RADIUS + BALL_RADIUS + 10) state.ballOwner = state.draggedItem;
+        }
+        
+        updateBallPos();
         render(); recordFrame();
     } else if (state.mode === 'draw' && state.currentLine) {
         state.currentLine.points.push(pos); render();
@@ -253,11 +264,14 @@ canvas.addEventListener('mouseup', () => { state.isDragging = false; state.dragg
 canvas.addEventListener('mouseleave', () => { state.isDragging = false; state.draggedItem = null; if (state.mode === 'draw' && state.currentLine) { state.lines.push(state.currentLine); state.currentLine = null; } });
 
 // --- ANIMAÇÃO BOLA ---
-function animateBall(targetX, targetY) {
+function animateBall(targetX, targetY, receiver = null) {
     if (!state.ball) return;
-    const speed = 12;
+    state.isBallAnimating = true;
+    state.ballOwner = null; // Solta a bola durante a animação
+    const speed = 14;
+    
     function step() {
-        if (!state.ball || state.playing) return;
+        if (!state.ball || state.playing) { state.isBallAnimating = false; return; }
         const dx = targetX - state.ball.x, dy = targetY - state.ball.y;
         const dist = Math.hypot(dx, dy);
         
@@ -265,7 +279,10 @@ function animateBall(targetX, targetY) {
             state.ball.x += (dx / dist) * speed; state.ball.y += (dy / dist) * speed;
             render(); recordFrame(); requestAnimationFrame(step);
         } else {
-            state.ball.x = targetX; state.ball.y = targetY; render(); recordFrame();
+            state.ball.x = targetX; state.ball.y = targetY; 
+            state.isBallAnimating = false;
+            if (receiver) { state.ballOwner = receiver; updateBallPos(); }
+            render(); recordFrame();
         }
     }
     step();
@@ -283,7 +300,6 @@ function recordFrame() {
 function playRecording(framesToPlay = null) {
     const frames = framesToPlay || state.recordedFrames;
     if (frames.length === 0) return;
-    
     state.playing = true; state.frameIndex = 0;
     const backup = { players: JSON.parse(JSON.stringify(state.players)), ball: state.ball ? JSON.parse(JSON.stringify(state.ball)) : null };
 
@@ -291,40 +307,32 @@ function playRecording(framesToPlay = null) {
         if (!state.playing || state.frameIndex >= frames.length) {
             state.playing = false;
             document.getElementById('btn-play').innerHTML = '<i class="fas fa-play"></i> Reproduzir Atual';
-            state.players = backup.players; state.ball = backup.ball; render();
+            state.players = backup.players; state.ball = backup.ball; updateBallPos(); render();
             return;
         }
         const frame = frames[state.frameIndex];
         state.players = frame.players; state.ball = frame.ball; render();
-        state.frameIndex++;
-        setTimeout(() => requestAnimationFrame(playFrame), 30);
+        state.frameIndex++; setTimeout(() => requestAnimationFrame(playFrame), 30);
     }
-    
     document.getElementById('btn-play').innerHTML = '<i class="fas fa-stop"></i> Parar Reprodução';
     playFrame();
 }
 
 // --- CONTROLES UI E MODAL ---
-function updateModeButton(btnId) {
-    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(btnId).classList.add('active');
-    canvas.className = (state.mode === 'draw' || state.mode === 'erase') ? 'drawing' : '';
-}
-
 function resetSpecialMode() {
-    state.mode = 'drag'; state.actionData = {};
+    state.mode = 'drag';
     document.querySelectorAll('.special-action').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.hint').forEach(h => h.style.display = 'none');
     document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-    render();
+    canvas.className = ''; render();
 }
 
-document.getElementById('btn-pen').onclick = () => { resetSpecialMode(); state.mode = 'draw'; updateModeButton('btn-pen'); };
-document.getElementById('btn-eraser').onclick = () => { resetSpecialMode(); state.mode = 'erase'; updateModeButton('btn-eraser'); };
+document.getElementById('btn-pen').onclick = () => { resetSpecialMode(); state.mode = 'draw'; canvas.className = 'drawing'; };
+document.getElementById('btn-eraser').onclick = () => { resetSpecialMode(); state.mode = 'erase'; canvas.className = 'drawing'; };
 document.getElementById('btn-undo').onclick = () => { state.lines.pop(); render(); };
 document.getElementById('btn-clear-drawings').onclick = () => { state.lines = []; render(); };
 
-// Adaptar Posições na Rotação (Matemática de proporção visual)
+// --- ROTAÇÃO CORRIGIDA (Ir e Voltar) ---
 document.getElementById('btn-orientation').onclick = () => {
     const oldW = canvas.width, oldH = canvas.height;
     state.isVertical = !state.isVertical;
@@ -334,14 +342,16 @@ document.getElementById('btn-orientation').onclick = () => {
     state.players.forEach(p => {
         if(!p.isGK){
             let px = p.x / oldW, py = p.y / oldH;
-            p.x = (1 - py) * newW; p.y = px * newH;
+            // Troca limpa de eixos garante o "ir e voltar"
+            p.x = py * newW; 
+            p.y = px * newH;
         }
     });
-    if (state.ball) {
+    if (state.ball && !state.ballOwner) {
         let px = state.ball.x / oldW, py = state.ball.y / oldH;
-        state.ball.x = (1 - py) * newW; state.ball.y = px * newH;
+        state.ball.x = py * newW; state.ball.y = px * newH;
     }
-    ensureGoalkeepers(); render();
+    ensureGoalkeepers(); updateBallPos(); render();
 };
 
 const btnRecord = document.getElementById('btn-record');
@@ -359,8 +369,6 @@ btnRecord.onclick = () => {
         btnRecord.innerHTML = '<i class="fas fa-circle"></i> Gravar Jogada';
         document.getElementById('btn-play').disabled = state.recordedFrames.length === 0;
         document.getElementById('btn-clear-record').disabled = state.recordedFrames.length === 0;
-        
-        // Dispara o Modal ao parar de gravar se houver frames
         if (state.recordedFrames.length > 0) showSavePlayModal();
     }
 };
@@ -368,18 +376,14 @@ btnRecord.onclick = () => {
 document.getElementById('btn-play').onclick = () => { if (state.playing) state.playing = false; else playRecording(); };
 document.getElementById('btn-clear-record').onclick = () => { state.recordedFrames = []; document.getElementById('btn-play').disabled = true; document.getElementById('btn-clear-record').disabled = true; };
 
-// Modal e Armazenamento de Jogadas (Máx 3)
 function renderSavedPlays() {
-    const list = document.getElementById('plays-list');
-    list.innerHTML = '';
+    const list = document.getElementById('plays-list'); list.innerHTML = '';
     savedPlays.forEach((p, i) => {
-        const li = document.createElement('li');
-        li.innerText = p.name;
+        const li = document.createElement('li'); li.innerText = p.name;
         const playBtn = document.createElement('button');
-        playBtn.innerHTML = '<i class="fas fa-play"></i>'; playBtn.className = 'mini-btn'; playBtn.title = "Assistir jogada";
+        playBtn.innerHTML = '<i class="fas fa-play"></i>'; playBtn.className = 'mini-btn'; 
         playBtn.onclick = () => playRecording(p.frames);
-        li.appendChild(playBtn);
-        list.appendChild(li);
+        li.appendChild(playBtn); list.appendChild(li);
     });
 }
 
@@ -401,19 +405,13 @@ function showSavePlayModal() {
 document.getElementById('btn-confirm-save').onclick = () => {
     const name = document.getElementById('play-name').value || `Jogada ${savedPlays.length + 1}`;
     const newPlay = { name, frames: state.recordedFrames };
-    
-    if (savedPlays.length >= 3) {
-        const idx = document.getElementById('replace-select').value;
-        savedPlays[idx] = newPlay;
-    } else { savedPlays.push(newPlay); }
-    
+    if (savedPlays.length >= 3) savedPlays[document.getElementById('replace-select').value] = newPlay;
+    else savedPlays.push(newPlay);
     localStorage.setItem('taticoWebPlays', JSON.stringify(savedPlays));
-    renderSavedPlays();
-    document.getElementById('modal-save-play').style.display = 'none';
+    renderSavedPlays(); document.getElementById('modal-save-play').style.display = 'none';
 };
 document.getElementById('btn-cancel-save').onclick = () => { document.getElementById('modal-save-play').style.display = 'none'; };
 
-// Layout Storage Geral
 document.getElementById('btn-save').onclick = () => {
     localStorage.setItem('taticoWebSave', JSON.stringify({ players: state.players, ball: state.ball, lines: state.lines, isVertical: state.isVertical }));
     alert('Formação atual salva no navegador!');
@@ -422,20 +420,17 @@ document.getElementById('btn-load').onclick = () => {
     const data = localStorage.getItem('taticoWebSave');
     if (data) {
         const p = JSON.parse(data); state.players = p.players || []; state.ball = p.ball || null; state.lines = p.lines || []; state.isVertical = p.isVertical || false;
-        resizeCanvas();
+        state.ballOwner = null; resizeCanvas();
     }
 };
 
 // Peças
-document.getElementById('btn-add-a').onclick = () => { state.players.push({ id: Date.now(), team: 'A', x: canvas.width/2 - 30, y: canvas.height/2, isGK: false }); render(); recordFrame(); };
-document.getElementById('btn-add-b').onclick = () => { state.players.push({ id: Date.now(), team: 'B', x: canvas.width/2 + 30, y: canvas.height/2, isGK: false }); render(); recordFrame(); };
-document.getElementById('btn-add-ball').onclick = () => { state.ball = { x: canvas.width/2, y: canvas.height/2 }; render(); recordFrame(); };
-document.getElementById('btn-clear-board').onclick = () => { state.players = []; state.ball = null; state.lines = []; ensureGoalkeepers(); render(); recordFrame(); };
+document.getElementById('btn-add-a').onclick = () => { state.players.push({ id: Date.now(), team: 'A', x: canvas.width/2 - 40, y: canvas.height/2, isGK: false }); render(); recordFrame(); };
+document.getElementById('btn-add-b').onclick = () => { state.players.push({ id: Date.now(), team: 'B', x: canvas.width/2 + 40, y: canvas.height/2, isGK: false }); render(); recordFrame(); };
+document.getElementById('btn-add-ball').onclick = () => { state.ball = { x: canvas.width/2, y: canvas.height/2 }; state.ballOwner = null; render(); recordFrame(); };
+document.getElementById('btn-clear-board').onclick = () => { state.players = []; state.ball = { x: canvas.width/2, y: canvas.height/2 }; state.ballOwner = null; state.lines = []; ensureGoalkeepers(); render(); recordFrame(); };
 
-// Táticas com coordenadas percentuais (adaptam ao rotacionar)
-function getCoords(px, py) {
-    return state.isVertical ? { x: (1 - py) * canvas.width, y: px * canvas.height } : { x: px * canvas.width, y: py * canvas.height };
-}
+function getCoords(px, py) { return state.isVertical ? { x: py * canvas.width, y: px * canvas.height } : { x: px * canvas.width, y: py * canvas.height }; }
 
 document.getElementById('btn-preset-11').onclick = () => {
     state.players = []; ensureGoalkeepers();
@@ -448,8 +443,7 @@ document.getElementById('btn-preset-11').onclick = () => {
         let posB = getCoords(1 - xsA[i], ysA[i]);
         state.players.push({id: 'b'+i, team: 'B', x: posB.x, y: posB.y, isGK: false});
     }
-    let ballPos = getCoords(0.5, 0.5);
-    state.ball = { x: ballPos.x, y: ballPos.y };
+    let ballPos = getCoords(0.5, 0.5); state.ball = { x: ballPos.x, y: ballPos.y }; state.ballOwner = null;
     render(); recordFrame();
 };
 
@@ -462,24 +456,43 @@ document.getElementById('btn-preset-3').onclick = () => {
         state.players.push({id: 'a'+i, team: 'A', x: posAtk[i].x, y: posAtk[i].y, isGK: false});
         state.players.push({id: 'b'+i, team: 'B', x: posDef[i].x, y: posDef[i].y, isGK: false});
     }
-    let ballPos = getCoords(0.32, 0.5);
-    state.ball = { x: ballPos.x, y: ballPos.y };
+    let ballPos = getCoords(0.5, 0.5); state.ball = { x: ballPos.x, y: ballPos.y }; state.ballOwner = null;
     render(); recordFrame();
 };
 
-// Passes e Chutes
-document.getElementById('btn-pass').onclick = (e) => {
-    const holder = getBallHolder();
-    if (!holder) { alert("Nenhum jogador está com a bola! Aproxime um jogador da bola primeiro."); return; }
+// --- CHUTE CORRIGIDO ---
+document.getElementById('btn-shoot').onclick = () => {
+    if (!state.ballOwner) {
+        alert("Nenhum jogador está com a bola! Aproxime um jogador da bola para dominá-la primeiro.");
+        return;
+    }
+    resetSpecialMode();
+    const shooter = state.ballOwner;
+    let goalX, goalY;
+    if (!state.isVertical) {
+        goalX = shooter.team === 'A' ? canvas.width : 0;
+        goalY = canvas.height/2;
+    } else {
+        goalX = canvas.width/2;
+        goalY = shooter.team === 'A' ? canvas.height : 0;
+    }
     
-    resetSpecialMode(); state.mode = 'pass'; state.actionData.holder = holder; e.target.classList.add('active');
+    animateBall(goalX, goalY); 
+};
+
+// --- PASSE CORRIGIDO ---
+document.getElementById('btn-pass').onclick = (e) => {
+    if (!state.ballOwner) {
+        alert("Nenhum jogador está com a bola! Aproxime um jogador da bola para dominá-la primeiro.");
+        return;
+    }
+    resetSpecialMode(); state.mode = 'pass'; e.target.classList.add('active');
     document.getElementById('hint-pass').style.display = 'block';
 };
 
-document.getElementById('btn-shoot').onclick = (e) => {
-    resetSpecialMode(); state.mode = 'shoot'; e.target.classList.add('active');
-    document.getElementById('hint-shoot').style.display = 'block';
-};
-
 // Start
-setTimeout(() => { resizeCanvas(); state.mode = 'drag'; renderSavedPlays(); }, 100);
+setTimeout(() => { 
+    state.ball = { x: 0, y: 0 }; 
+    resizeCanvas(); state.ball.x = canvas.width/2; state.ball.y = canvas.height/2; 
+    state.mode = 'drag'; renderSavedPlays(); 
+}, 100);
