@@ -6,63 +6,32 @@
 }
 
 body, html {
-    width: 100%;
-    height: 100%;
-    background-color: #1e1e1e;
-    color: #fff;
-    overflow: hidden;
+    width: 100%; height: 100%; background-color: #1e1e1e; color: #fff; overflow: hidden;
 }
 
 #app {
-    display: flex;
-    width: 100%;
-    height: 100%;
+    display: flex; width: 100%; height: 100%;
 }
 
 .panel {
-    width: 260px;
-    background-color: #2d2d2d;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    box-shadow: 0 0 10px rgba(0,0,0,0.5);
-    z-index: 10;
-    overflow-y: auto;
+    width: 260px; background-color: #2d2d2d; padding: 20px; display: flex;
+    flex-direction: column; gap: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    z-index: 10; overflow-y: auto;
 }
 
 h3 {
-    font-size: 14px;
-    text-transform: uppercase;
-    color: #aaa;
-    margin-bottom: 5px;
-    margin-top: 10px;
+    font-size: 14px; text-transform: uppercase; color: #aaa; margin-bottom: 5px; margin-top: 10px;
 }
 
-hr {
-    border: 0;
-    height: 1px;
-    background: #444;
-    margin: 10px 0;
-}
+hr { border: 0; height: 1px; background: #444; margin: 10px 0; }
 
 button {
-    padding: 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s;
+    padding: 10px; border: none; border-radius: 5px; cursor: pointer;
+    font-size: 14px; font-weight: 600; display: flex; align-items: center;
+    gap: 8px; transition: all 0.2s;
 }
 
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .tool-btn { background-color: #444; color: white; }
 .tool-btn.active { background-color: #4CAF50; }
@@ -88,12 +57,7 @@ button:disabled {
 .special-action { background-color: #9C27B0; }
 .special-action.active { background-color: #E1BEE7; color: #4A148C; }
 
-.hint {
-    font-size: 11px;
-    color: #E1BEE7;
-    margin-top: -5px;
-    margin-bottom: 5px;
-}
+.hint { font-size: 11px; color: #E1BEE7; margin-top: -5px; margin-bottom: 5px; }
 
 @keyframes pulse {
     0% { transform: scale(1); }
@@ -102,36 +66,38 @@ button:disabled {
 }
 
 #canvas-container {
-    flex-grow: 1;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    background-color: #121212;
-    overflow: hidden;
+    flex-grow: 1; position: relative; display: flex; justify-content: center;
+    align-items: center; background-color: #121212; overflow: hidden;
 }
 
-canvas {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    cursor: grab;
-}
-
-canvas:active {
-    cursor: grabbing;
-}
-
-canvas.drawing {
-    cursor: crosshair;
-}
+canvas { box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: grab; }
+canvas:active { cursor: grabbing; }
+canvas.drawing { cursor: crosshair; }
 
 .floating-btn {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    background-color: rgba(255, 255, 255, 0.9);
-    color: #333;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    position: absolute; bottom: 20px; right: 20px; background-color: rgba(255, 255, 255, 0.9);
+    color: #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
-.floating-btn:hover {
-    background-color: white;
+.floating-btn:hover { background-color: white; }
+
+/* Submenu Jogadas Salvas */
+#plays-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+#plays-list li {
+    display: flex; justify-content: space-between; align-items: center;
+    background: #333; padding: 8px 10px; border-radius: 5px; font-size: 13px; border-left: 3px solid #2E7D32;
+}
+.mini-btn { padding: 6px; background: #2E7D32; color: #fff; border-radius: 4px; font-size: 12px; }
+.mini-btn:hover { background: #1B5E20; }
+
+/* Modal Styles */
+.modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 100; justify-content: center; align-items: center;
+}
+.modal-content {
+    background: #2d2d2d; padding: 25px; border-radius: 8px; width: 320px;
+    display: flex; flex-direction: column; gap: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.9);
+}
+.modal-content input, .modal-content select {
+    padding: 10px; border-radius: 4px; border: 1px solid #555; background: #1e1e1e; color: #fff;
 }
