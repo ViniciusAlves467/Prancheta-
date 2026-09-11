@@ -9,7 +9,6 @@
 </head>
 <body>
     <div id="app">
-        <!-- Painel Esquerdo: Ferramentas e Gravação -->
         <div id="left-panel" class="panel">
             <h3>Ferramentas</h3>
             <button id="btn-pen" class="tool-btn active" title="Caneta"><i class="fas fa-pen"></i> Caneta</button>
@@ -24,7 +23,6 @@
             <button id="btn-play" class="action-btn play-btn" disabled><i class="fas fa-play"></i> Reproduzir Atual</button>
             <button id="btn-clear-record" class="action-btn" disabled><i class="fas fa-stop"></i> Limpar Gravação</button>
 
-            <!-- Submenu de Jogadas Salvas -->
             <div id="saved-plays-menu">
                 <h3 style="margin-top: 15px;">Jogadas Salvas (Máx 3)</h3>
                 <ul id="plays-list"></ul>
@@ -36,18 +34,16 @@
             <button id="btn-load" class="action-btn"><i class="fas fa-folder-open"></i> Carregar Layout</button>
         </div>
 
-        <!-- Área Central: Campo (Canvas) -->
         <div id="canvas-container">
             <canvas id="tactical-board"></canvas>
             <button id="btn-orientation" class="floating-btn"><i class="fas fa-sync-alt"></i> Alternar Rotação</button>
         </div>
 
-        <!-- Painel Direito: Elenco e Ações -->
         <div id="right-panel" class="panel">
             <h3>Peças</h3>
             <button id="btn-add-a" class="add-btn team-a"><i class="fas fa-user"></i> Add Time A (Azul)</button>
             <button id="btn-add-b" class="add-btn team-b"><i class="fas fa-user"></i> Add Time B (Vermelho)</button>
-            <button id="btn-add-ball" class="add-btn ball-btn"><i class="fas fa-futbol"></i> Add Bola</button>
+            <button id="btn-add-ball" class="add-btn ball-btn"><i class="fas fa-futbol"></i> Resetar Bola</button>
             
             <hr>
             <h3>Táticas (Presets)</h3>
@@ -58,14 +54,13 @@
             <hr>
             <h3>Ações de Jogo</h3>
             <button id="btn-pass" class="action-btn special-action"><i class="fas fa-exchange-alt"></i> Fazer Passe</button>
-            <p class="hint" id="hint-pass" style="display:none;">Clique apenas no jogador que VAI RECEBER a bola.</p>
+            <p class="hint" id="hint-pass" style="display:none;">Clique no jogador que VAI RECEBER a bola.</p>
             
             <button id="btn-shoot" class="action-btn special-action"><i class="fas fa-bullseye"></i> Chutar ao Gol</button>
-            <p class="hint" id="hint-shoot" style="display:none;">Clique no jogador que vai chutar.</p>
         </div>
     </div>
 
-    <!-- Modal de Salvamento de Jogada -->
+    <!-- Modal de Salvamento -->
     <div id="modal-save-play" class="modal">
         <div class="modal-content">
             <h3>Salvar Gravação</h3>
@@ -83,7 +78,6 @@
             </div>
         </div>
     </div>
-
     <script src="script.js"></script>
 </body>
 </html>
