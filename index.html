@@ -21,14 +21,19 @@
             
             <h3>Gravação</h3>
             <button id="btn-record" class="action-btn record-btn"><i class="fas fa-circle"></i> Gravar Jogada</button>
-            <button id="btn-play" class="action-btn play-btn" disabled><i class="fas fa-play"></i> Reproduzir</button>
+            <button id="btn-play" class="action-btn play-btn" disabled><i class="fas fa-play"></i> Reproduzir Atual</button>
             <button id="btn-clear-record" class="action-btn" disabled><i class="fas fa-stop"></i> Limpar Gravação</button>
 
-            <hr>
+            <!-- Submenu de Jogadas Salvas -->
+            <div id="saved-plays-menu">
+                <h3 style="margin-top: 15px;">Jogadas Salvas (Máx 3)</h3>
+                <ul id="plays-list"></ul>
+            </div>
 
-            <h3>Armazenamento</h3>
-            <button id="btn-save" class="action-btn"><i class="fas fa-save"></i> Salvar Estado</button>
-            <button id="btn-load" class="action-btn"><i class="fas fa-folder-open"></i> Carregar Estado</button>
+            <hr>
+            <h3>Armazenamento Geral</h3>
+            <button id="btn-save" class="action-btn"><i class="fas fa-save"></i> Salvar Layout Atual</button>
+            <button id="btn-load" class="action-btn"><i class="fas fa-folder-open"></i> Carregar Layout</button>
         </div>
 
         <!-- Área Central: Campo (Canvas) -->
@@ -45,22 +50,40 @@
             <button id="btn-add-ball" class="add-btn ball-btn"><i class="fas fa-futbol"></i> Add Bola</button>
             
             <hr>
-
             <h3>Táticas (Presets)</h3>
             <button id="btn-preset-11" class="action-btn"><i class="fas fa-users"></i> Formação 11x11</button>
             <button id="btn-preset-3" class="action-btn"><i class="fas fa-running"></i> Contra-Ataque 3x3</button>
-            <button id="btn-clear-board" class="action-btn danger"><i class="fas fa-broom"></i> Limpar Campo</button>
+            <button id="btn-clear-board" class="action-btn danger"><i class="fas fa-broom"></i> Limpar Linha</button>
 
             <hr>
-
             <h3>Ações de Jogo</h3>
             <button id="btn-pass" class="action-btn special-action"><i class="fas fa-exchange-alt"></i> Fazer Passe</button>
-            <p class="hint" id="hint-pass" style="display:none;">Clique no emissor, depois no receptor.</p>
+            <p class="hint" id="hint-pass" style="display:none;">Clique apenas no jogador que VAI RECEBER a bola.</p>
             
             <button id="btn-shoot" class="action-btn special-action"><i class="fas fa-bullseye"></i> Chutar ao Gol</button>
             <p class="hint" id="hint-shoot" style="display:none;">Clique no jogador que vai chutar.</p>
         </div>
     </div>
+
+    <!-- Modal de Salvamento de Jogada -->
+    <div id="modal-save-play" class="modal">
+        <div class="modal-content">
+            <h3>Salvar Gravação</h3>
+            <p style="font-size: 13px; color: #ccc;">Dê um nome para a jogada recém-gravada.</p>
+            <input type="text" id="play-name" placeholder="Ex: Saída rápida" autocomplete="off" />
+            
+            <div id="replace-section" style="display:none; margin-top: 10px;">
+                <p style="font-size: 13px; color: #ff5252;">Limite de 3 jogadas atingido. Escolha uma para substituir:</p>
+                <select id="replace-select"></select>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="btn-confirm-save" style="background: #4CAF50; flex: 1; justify-content: center;">Salvar</button>
+                <button id="btn-cancel-save" style="background: #555; flex: 1; justify-content: center;">Descartar</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
